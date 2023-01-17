@@ -31,15 +31,15 @@ class CLRHead(nn.Module):
                  sample_points=36,
                  cfg=None):
         super(CLRHead, self).__init__()
-        self.cfg = cfg
-        self.img_w = self.cfg.img_w
-        self.img_h = self.cfg.img_h
-        self.n_strips = num_points - 1
-        self.n_offsets = num_points
-        self.num_priors = num_priors
-        self.sample_points = sample_points
-        self.refine_layers = refine_layers
-        self.fc_hidden_dim = fc_hidden_dim
+        self.cfg = cfg          
+        self.img_w = self.cfg.img_w         # 800
+        self.img_h = self.cfg.img_h         # 320
+        self.n_strips = num_points - 1      # 71
+        self.n_offsets = num_points         # 72
+        self.num_priors = num_priors        # 192
+        self.sample_points = sample_points  # 36
+        self.refine_layers = refine_layers  # 3
+        self.fc_hidden_dim = fc_hidden_dim  # 64
 
         self.register_buffer(name='sample_x_indexs', tensor=(torch.linspace(
             0, 1, steps=self.sample_points, dtype=torch.float32) *
@@ -51,7 +51,7 @@ class CLRHead(nn.Module):
                                        steps=self.n_offsets,
                                        dtype=torch.float32))
 
-        self.prior_feat_channels = prior_feat_channels
+        self.prior_feat_channels = prior_feat_channels  # 64
 
         self._init_prior_embeddings()
         init_priors, priors_on_featmap = self.generate_priors_from_embeddings() #None, None
@@ -145,10 +145,10 @@ class CLRHead(nn.Module):
 
     def _init_prior_embeddings(self):
         # [start_y, start_x, theta] -> all normalize
-        self.prior_embeddings = nn.Embedding(self.num_priors, 3)
+        self.prior_embeddings = nn.Embedding(self.num_priors, 3)  # Embedding(192, 3)
 
-        bottom_priors_nums = self.num_priors * 3 // 4
-        left_priors_nums, _ = self.num_priors // 8, self.num_priors // 8
+        bottom_priors_nums = self.num_priors * 3 // 4  # 144
+        left_priors_nums, _ = self.num_priors // 8, self.num_priors // 8  # 24
 
         strip_size = 0.5 / (left_priors_nums // 2 - 1)
         bottom_strip_size = 1 / (bottom_priors_nums // 4 + 1)
@@ -188,8 +188,12 @@ class CLRHead(nn.Module):
             prediction_list: each layer's prediction result
             seg: segmentation result for auxiliary loss
         '''
-        batch_features = list(x[len(x) - self.refine_layers:])
-        batch_features.reverse()
+        # x为三个从FPN来的特征层，特征通道数一样，尺寸不同。
+        # x[0].shape: torch.Size([24, 64, 40, 100])
+        # x[1].shape: torch.Size([24, 64, 20, 50])
+        # x[2].shape: torch.Size([24, 64, 10, 25])
+        batch_features = list(x[len(x) - self.refine_layers:])  # 取参与修正的特征层
+        batch_features.reverse()  # 反转，改为小尺寸特征图在前
         batch_size = batch_features[-1].shape[0]
 
         if self.training:
@@ -274,7 +278,9 @@ class CLRHead(nn.Module):
             output = {'predictions_lists': predictions_lists, 'seg': seg}
             return self.loss(output, kwargs['batch'])
 
-        return predictions_lists[-1]
+        return predictions_lists[-1]  # 多次修正后的结果 
+        # output['predictions_lists'][-1].shape: torch.Size([24, 192, 78]) 
+        # 24是批次，
 
     def predictions_to_pred(self, predictions):
         '''
