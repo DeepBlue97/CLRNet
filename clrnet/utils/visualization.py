@@ -1,7 +1,7 @@
 import cv2
 import os
 import os.path as osp
-
+import time
 
 COLORS = [
     (255, 0, 0),
@@ -51,11 +51,12 @@ def imshow_lanes(img, lanes, show=False, out_file=None, width=4):
 
     for idx, xys in enumerate(lanes_xys):
         for i in range(1, len(xys)):
-            cv2.line(img, xys[i - 1], xys[i], COLORS[idx], thickness=width)
-
-
+            cv2.line(img, xys[i - 1], xys[i], COLORS[idx], thickness=width) # img_z = np.zeros_like(img)
+    # cv2.line(img_z, xys[i - 1], xys[i], COLORS[idx], thickness=width) # img_z.sum()  # cv2.line(img_z, (370, 549), (436, 529), COLORS[idx], thickness=width)
+    # (370, 549) (436, 529)
     if show:
         cv2.imshow('view', img)
+        # time.sleep(0.5)
         cv2.waitKey(0)
 
     if out_file:

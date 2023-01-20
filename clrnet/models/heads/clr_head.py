@@ -18,6 +18,10 @@ from clrnet.models.utils.dynamic_assign import assign
 from clrnet.models.losses.lineiou_loss import liou_loss
 from ..registry import HEADS
 
+from aio_lane_nms import Lane_nms
+
+# pred_lane = (pred)
+
 
 @HEADS.register_module
 class CLRHead(nn.Module):
@@ -217,24 +221,26 @@ class CLRHead(nn.Module):
 
             fc_features = self.roi_gather(prior_features_stages,
                                           batch_features[stage], stage)
+            # torch.Size([24, 192, 64])
 
             fc_features = fc_features.view(num_priors, batch_size,
                                            -1).reshape(batch_size * num_priors,
                                                        self.fc_hidden_dim)
+            # torch.Size([4608, 64])
 
             cls_features = fc_features.clone()
             reg_features = fc_features.clone()
             for cls_layer in self.cls_modules:
-                cls_features = cls_layer(cls_features)
+                cls_features = cls_layer(cls_features)  # torch.Size([4608, 64])
             for reg_layer in self.reg_modules:
-                reg_features = reg_layer(reg_features)
+                reg_features = reg_layer(reg_features)  # torch.Size([4608, 64])
 
-            cls_logits = self.cls_layers(cls_features)
-            reg = self.reg_layers(reg_features)
+            cls_logits = self.cls_layers(cls_features)  # torch.Size([4608, 2])
+            reg = self.reg_layers(reg_features)  # torch.Size([4608, 76])
 
             cls_logits = cls_logits.reshape(
-                batch_size, -1, cls_logits.shape[1])  # (B, num_priors, 2)
-            reg = reg.reshape(batch_size, -1, reg.shape[1])
+                batch_size, -1, cls_logits.shape[1])  # (B, num_priors, 2) torch.Size([24, 192, 2])
+            reg = reg.reshape(batch_size, -1, reg.shape[1])  # torch.Size([24, 192, 76])
 
             predictions = priors.clone()
             predictions[:, :, :2] = cls_logits
@@ -468,6 +474,12 @@ class CLRHead(nn.Module):
             nms_predictions[...,
                             5:] = nms_predictions[..., 5:] * (self.img_w - 1)
 
+            # keep, num_to_keep = Lane_nms(
+            #     nms_predictions,
+            #     scores,
+            #     overlap=self.cfg.test_parameters.nms_thres,
+            #     top_k=self.cfg.max_lanes
+            # )
             keep, num_to_keep, _ = nms(
                 nms_predictions,
                 scores,

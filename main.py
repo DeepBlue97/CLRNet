@@ -35,6 +35,11 @@ def main():
         runner.validate()
     elif args.test:
         runner.test()
+    elif args.infer_one:
+        runner.infer_one(img=args.img)
+    elif args.infer:
+        
+        runner.infer_one(img=args.img)
     else:
         runner.train()
 
@@ -46,6 +51,10 @@ def parse_args():
                         type=str,
                         default=None,
                         help='work dirs')
+    parser.add_argument('--img',
+                        type=str,
+                        default=None,
+                        help='img path')
     parser.add_argument('--load_from',
                         default=None,
                         help='the checkpoint file to load from')
@@ -64,6 +73,10 @@ def parse_args():
         '--test',
         action='store_true',
         help='whether to test the checkpoint on testing set')
+    parser.add_argument(
+        '--infer',
+        action='store_true',
+        help='infer one img')
     parser.add_argument('--gpus', nargs='+', type=int, default='0')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
     args = parser.parse_args()
