@@ -87,14 +87,24 @@ def get_extensions():
     extension = CUDAExtension
     ext_name = 'clrnet.ops.nms_impl'
 
+    extra_compile_args = {'cxx': [], 'nvcc': []}
+
+    # extra_compile_args['cxx'] = ['-std=c++14']
+    # # extra_compile_args['cxx'] += ['-allow-unsupported-compiler']
+    # # extra_compile_args['nvcc'] += ['--gpu-max-threads-per-block=1024']
+    # extra_compile_args['nvcc'] += ['-std=c++14']
+    # # extra_compile_args['nvcc'] += ['-allow-unsupported-compiler']
+
     ext_ops = extension(
         name=ext_name,
         sources=op_files,
+        # extra_compile_args=extra_compile_args#['-allow-unsupported-compiler']
     )
 
     extensions.append(ext_ops)
 
     return extensions
+    # return []
 
 
 setup(name='clrnet',

@@ -1,11 +1,51 @@
 import os
+import argparse
+
+import torch
+import torch.nn.parallel
+import torch.backends.cudnn as cudnn
 
 from clrnet.utils.recorder import build_recorder
 from clrnet.utils.net_utils import save_model, load_network, resume_network
 from clrnet.models.registry import build_net
 from clrnet.utils.config import Config
 
-from main import parse_args
+# from main import parse_args
+
+cudnn.benchmark = True
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train a detector')
+    parser.add_argument('config', help='train config file path')
+    parser.add_argument('--work_dirs',
+                        type=str,
+                        default=None,
+                        help='work dirs')
+    parser.add_argument('--load_from',
+                        default=None,
+                        help='the checkpoint file to load from')
+    parser.add_argument('--resume_from',
+            default=None,
+            help='the checkpoint file to resume from')
+    parser.add_argument('--finetune_from',
+            default=None,
+            help='the checkpoint file to resume from')
+    parser.add_argument('--view', action='store_true', help='whether to view')
+    parser.add_argument(
+        '--validate',
+        action='store_true',
+        help='whether to evaluate the checkpoint during training')
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        help='whether to test the checkpoint on testing set')
+    parser.add_argument('--gpus', nargs='+', type=int, default='0')
+    parser.add_argument('--seed', type=int, default=0, help='random seed')
+    args = parser.parse_args()
+
+    return args
+
 
 class Runner(object):
     def __init__(self, cfg):
@@ -39,4 +79,10 @@ cfg.view = args.view
 cfg.seed = args.seed
 
 cfg.work_dirs = args.work_dirs if args.work_dirs else cfg.work_dirs
-runner = Runner()
+runner = Runner(cfg)
+
+"""
+python main_infer.py work_dirs\\clr\\r18_culane\\20230113_113829_lr_6e-04_b_24\\config.py --load_from work_dirs\\clr\\r18_culane\\20230113_113829_lr_6e-04_b_24\\ckpt\\10.pth --gpus 0
+
+
+"""

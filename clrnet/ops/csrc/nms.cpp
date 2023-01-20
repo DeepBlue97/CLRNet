@@ -29,6 +29,8 @@
 
 #include <torch/extension.h>
 #include <torch/types.h>
+// #include <torch\\extension.h>
+// #include <torch\\types.h>
 #include <iostream>
 
 std::vector<at::Tensor> nms_cuda_forward(
