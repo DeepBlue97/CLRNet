@@ -6,6 +6,7 @@ import pytorch_warmup as warmup
 import numpy as np
 import random
 import os
+import os.path as osp
 
 from clrnet.models.registry import build_net
 from .registry import build_trainer, build_evaluator
@@ -14,6 +15,7 @@ from .scheduler import build_scheduler
 from clrnet.datasets import build_dataloader
 from clrnet.utils.recorder import build_recorder
 from clrnet.utils.net_utils import save_model, load_network, resume_network
+from clrnet.utils.visualization import imshow_lanes
 from mmcv.parallel import MMDataParallel
 
 
@@ -101,6 +103,60 @@ class Runner(object):
             if self.cfg.lr_update_by_epoch:
                 self.scheduler.step()
 
+    def infer_one(self, img):
+        # if not self.test_loader:
+        #     self.test_loader = build_dataloader(self.cfg.dataset.test,
+        #                                         self.cfg,
+        #                                         is_train=False)
+        # for f in os.listdir('/media/peter/ocean/data/dataset/lane/CULane/driver_23_30frame/05151640_0419.MP4/'):
+        #     if f.endswith('.jpg'):
+
+        # img = cv2.imread(img) #'/media/peter/ocean/data/dataset/lane/CULane/driver_23_30frame/05151640_0419.MP4/00030.jpg')
+        # img = cv2.imread(os.path.join('/media/peter/ocean/data/dataset/lane/CULane/driver_23_30frame/05151640_0419.MP4/', f))
+        img = cv2.imread(img)
+        # img = img[self.cfg.cut_height:, :, :]
+        data = img[self.cfg.cut_height:, :, :]
+        data = cv2.resize(data, (800, 320))
+        data = data.astype(np.float32) / 255.0
+        data = torch.Tensor(data)#.long()
+        data = data.permute([2, 0, 1]).unsqueeze(0)
+        data = data.detach().clone()
+
+        self.net.eval()
+        # predictions = []
+        # for i, data in enumerate(tqdm(self.test_loader, desc=f'Testing')):
+        # data = self.to_cuda(data)
+        data = data.cuda()
+        with torch.no_grad():
+            output = self.net(data)
+            output = self.net.module.heads.get_lanes(output)
+            print(output)
+        
+        # img_metas = [item for img_meta in img_metas.data for item in img_meta]
+        for lanes in output:
+            # img_name = img_meta['img_name']
+            # img = cv2.imread(osp.join(self.data_root, img_name))
+            # out_file = osp.join(self.cfg.work_dir, 'visualization',
+            #                     img_name.replace('/', '_'))
+            lanes = [lane.to_array(self.cfg) for lane in lanes]
+            imshow_lanes(
+                img, 
+                lanes, 
+                show=True,
+                # out_file=out_file
+            )
+            
+            # return output
+
+
+            # predictions.extend(output)
+        # if self.cfg.view:
+        #     self.test_loader.dataset.view(output, data['meta'])
+
+        # metric = self.test_loader.dataset.evaluate(predictions,
+        #                                            self.cfg.work_dir)
+        # if metric is not None:
+        #     self.recorder.logger.info('metric: ' + str(metric))
 
     def test(self):
         if not self.test_loader:
@@ -114,6 +170,7 @@ class Runner(object):
             with torch.no_grad():
                 output = self.net(data)
                 output = self.net.module.heads.get_lanes(output)
+                print(output)
                 predictions.extend(output)
             if self.cfg.view:
                 self.test_loader.dataset.view(output, data['meta'])
