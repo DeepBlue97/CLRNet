@@ -55,9 +55,11 @@ def imshow_lanes(img, lanes, show=False, out_file=None, width=4):
     # cv2.line(img_z, xys[i - 1], xys[i], COLORS[idx], thickness=width) # img_z.sum()  # cv2.line(img_z, (370, 549), (436, 529), COLORS[idx], thickness=width)
     # (370, 549) (436, 529)
     if show:
-        cv2.imshow('view', img)
+        # cv2.imshow('view', img)
+        cv2.imshow('view', cv2.resize(img, (300, 114)))
+
         # time.sleep(0.5)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
     if out_file:
         if not osp.exists(osp.dirname(out_file)):

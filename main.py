@@ -1,4 +1,6 @@
 import os
+import time
+
 import cv2
 import torch
 import torch.nn.parallel
@@ -9,6 +11,8 @@ import random
 from clrnet.utils.config import Config
 from clrnet.engine.runner import Runner
 from clrnet.datasets import build_dataloader
+
+from grabscreen import grab_screen
 
 
 def main():
@@ -38,8 +42,15 @@ def main():
     elif args.infer_one:
         runner.infer_one(img=args.img)
     elif args.infer:
-        
-        runner.infer_one(img=args.img)
+        while True:
+            img = grab_screen(region=(0, 0+200, 1600, 576+200))
+            img = cv2.resize(img, (1640, 590))
+            runner.infer_one(img=img)
+
+            # time.sleep(1)
+            # cv2.imshow('view', cv2.resize(img, (200, 76)))
+            # cv2.waitKey(1000)
+            # runner.infer_one(img=args.img)
     else:
         runner.train()
 
@@ -75,6 +86,10 @@ def parse_args():
         help='whether to test the checkpoint on testing set')
     parser.add_argument(
         '--infer',
+        action='store_true',
+        help='infer one img')
+    parser.add_argument(
+        '--infer_one',
         action='store_true',
         help='infer one img')
     parser.add_argument('--gpus', nargs='+', type=int, default='0')

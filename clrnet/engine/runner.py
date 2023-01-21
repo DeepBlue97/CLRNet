@@ -113,7 +113,8 @@ class Runner(object):
 
         # img = cv2.imread(img) #'/media/peter/ocean/data/dataset/lane/CULane/driver_23_30frame/05151640_0419.MP4/00030.jpg')
         # img = cv2.imread(os.path.join('/media/peter/ocean/data/dataset/lane/CULane/driver_23_30frame/05151640_0419.MP4/', f))
-        img = cv2.imread(img)
+        if isinstance(img, str):
+            img = cv2.imread(img)
         # img = img[self.cfg.cut_height:, :, :]
         data = img[self.cfg.cut_height:, :, :]
         data = cv2.resize(data, (800, 320))
@@ -130,7 +131,7 @@ class Runner(object):
         with torch.no_grad():
             output = self.net(data)
             output = self.net.module.heads.get_lanes(output)
-            print(output)
+            # print(output)
         
         # img_metas = [item for img_meta in img_metas.data for item in img_meta]
         for lanes in output:
